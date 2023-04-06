@@ -1,0 +1,188 @@
+---
+title: 'Exploratory Data Analysis: Stamford, CT Auto Accidents'
+author: "Holli Tai and Joaquin Sanchez Gomez"
+date: "2023-04-04"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+---
+
+```{r echo=FALSE}
+
+
+```
+
+```{r}
+library(tidyverse)
+library(flexdashboard)
+library(plotly)
+library(leaflet)
+library(dygraphs)
+library(metricsgraphics)
+library(readr)
+library(DT)
+```
+```{r}
+setwd("C:/Users/Holli Tai/Dropbox/PC/Documents/Empirical Research/Emp_Research")
+
+Young_Driver_Crashes <- Young_Driver_Crashes <- read_csv("accidentdata/Young_Driver_Crashes.csv")
+
+
+Wrong_Way_Crashes <- read_csv("accidentdata/Wrong_Way_Crashes.csv")
+
+
+Work_Zone_Crashes <- read_csv("accidentdata/Work_Zone_Crashes.csv")
+
+
+Unlicensed_Driver_Crashes <- read_csv("accidentdata/Unlicensed_Driver_Crashes.csv")
+
+
+Pedestrian_Crashes <- read_csv("accidentdata/Pedestrian_Crashes.csv")
+
+
+Older_Driver_Crashes <- read_csv("accidentdata/Older_Driver_Crashes.csv")
+
+
+Non_Motorist_Crashes <- read_csv("accidentdata/Non_Motorist_Crashes.csv")
+
+
+Motorcycle_Crashes <- read_csv("accidentdata/Motorcycle_Crashes.csv")
+
+
+Intersection_Crashes <- read_csv("accidentdata/Intersection_Crashes.csv")
+
+
+Fixed_Object_Crashes <- read_csv("accidentdata/Fixed_Object_Crashes.csv")
+
+
+DUI_Crashes <- read_csv("accidentdata/DUI_Crashes.csv")
+
+
+Distracted_Driver_Crashes <- read_csv("accidentdata/Distracted_Driver_Crashes.csv")
+
+
+
+
+accident_list_1 <- bind_rows(Distracted_Driver_Crashes,DUI_Crashes,Fixed_Object_Crashes,Intersection_Crashes,Motorcycle_Crashes,Non_Motorist_Crashes,Older_Driver_Crashes,Pedestrian_Crashes,Unlicensed_Driver_Crashes,Work_Zone_Crashes,Wrong_Way_Crashes,Young_Driver_Crashes)
+accident_list_1 <- accident_list_1 %>% distinct()
+
+
+stamford <- accident_list_1[accident_list_1$CrashTownName == "Stamford", ]
+
+```
+
+
+
+```{r}
+
+
+accidents_per_year <-stamford %>%group_by(CrashDateYear) %>% count() %>% arrange(desc(n))
+
+colnames(accidents_per_year)[2]='NumberofCrashes'
+colnames(accidents_per_year)[1]='Year'
+
+
+
+```
+
+Date and Time Analysis
+======================
+
+###  
+```{r}
+p <- ggplot(data=accidents_per_year,aes(x=Year,y=NumberofCrashes, fill=Year)) +
+  geom_bar(stat='identity')
+
+
+Crashes_Per_Year<- p + ggtitle("Stamford, CT: Accidents per Year") +
+  xlab("Year") + ylab("Crash Count")
+
+ggplotly(Crashes_Per_Year)
+
+
+```
+
+###  
+```{r}
+most_day <- stamford %>%group_by(DayofWeek) %>% count %>% arrange(desc(n))
+
+
+colnames(most_day)[1]='DayofWeek'
+colnames(most_day)[2]='Crashes'
+
+day <- ggplot(data=most_day,aes(x=DayofWeek,y=Crashes, fill=DayofWeek)) +
+  geom_bar(stat='identity')
+
+
+days_most_crashes <-day + ggtitle("Crashes by Day of Week") +
+  xlab("Day of Week") + ylab ("Crash Count")
+
+
+ggplotly(days_most_crashes)
+```
+
+
+###  
+```{r}
+Week_Hour <-stamford %>%group_by(CrashDateYear,DayofWeek,CrashTimeHour) %>% count %>% arrange(desc(n))
+
+
+colnames(Week_Hour)[1]='Year'
+colnames(Week_Hour)[2]='Day of Week'
+colnames(Week_Hour)[3]='Hour'
+colnames(Week_Hour)[4]='Number of Crashes'
+datatable(Week_Hour,caption = 'Quantity of Crashes by Day and Hour')
+```
+
+Crash Type Severity & Location
+==============================
+
+
+###
+```{r}
+
+sevplot<- stamford %>%group_by(CrashSeverityDesc) %>% count %>% arrange(desc(n))
+
+
+colnames(sevplot)[1]="Severity"
+colnames(sevplot)[2]="Count"
+
+
+sev_gplot <- ggplot(data=sevplot,aes(x=Severity,y=Count, fill=Severity)) +
+  geom_histogram(stat='identity')
+
+sevplotly <-sev_gplot + ggtitle("Accident Severity Prevalence")
+
+ggplotly(sevplotly)
+```
+
+###
+```{r}
+
+Severity <- factor(stamford$CrashSeverity, labels=c("Injury of Any Type", "Fatal","Only Property Damage"))
+severity_and_weather<-ggplot(stamford, aes(x=WeatherConditionDesc, fill=Severity)) + geom_bar(position="dodge")
+
+weathsevere <-severity_and_weather + ggtitle("Weather and Crash Severity")+
+  xlab("Weather Condition") + ylab ("Crash Count")
+
+flip_weathsevere <- weathsevere+coord_flip()
+ggplotly(flip_weathsevere)
+
+colnames(most_day)[1]='DayofWeek'
+colnames(most_day)[2]='Crashes'
+
+day <- ggplot(data=most_day,aes(x=DayofWeek,y=Crashes, fill=DayofWeek)) +
+  geom_bar(stat='identity')
+```
+
+###
+```{r}
+Severity_location<-stamford %>%group_by(CrashSeverityDesc,CrashSpecificLocationDesc) %>% count %>% arrange(desc(n))
+
+colnames(Severity_location)[1]='Severity'
+colnames(Severity_location)[2]='Location'
+colnames(Severity_location)[3]='Count'
+
+datatable(Severity_location)
+
+```
